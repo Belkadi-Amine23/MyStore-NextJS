@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  name     String    @db.Text
+  email    String    @unique
+  password String    @db.Text
+  role     String    @db.Text
+  articles Article[]
+}
+
+model Famille {
+  id        Int     @id @default(autoincrement())
+  idArticle Int
+  type      String  @db.Text
+  article   Article @relation(fields: [idArticle], references: [id])
+}
+
+model Article {
+  id          Int            @id @default(autoincrement())
+  titre       String         @db.Text
+  description String         @db.Text
+  famille     String         @db.Text
+  quantité    Int
+  prix        Float
+  remise      Float
+  imageUrl    String         @db.Text
+  userId      Int?
+  user        User?          @relation(fields: [userId], references: [id])
+  familles    Famille[]
+  achats      ArticleAchat[]
+}
+
+model Achat {
+  id          Int            @id @default(autoincrement())
+  nom         String         @db.Text
+  prenom      String         @db.Text
+  wilaya      String         @db.Text
+  ville       String         @db.Text
+  telephone   String         @unique
+  totalMontant Float
+  validé      Boolean        @default(false) // Confirmé par l'admin
+  createdAt   DateTime       @default(now())
+  articles    ArticleAchat[]
+}
+
+model ArticleAchat {
+  id         Int      @id @default(autoincrement())
+  achatId    Int
+  articleId  Int
+  quantité   Int
+  prix       Float  // Prix au moment de l'achat
+  achat      Achat   @relation(fields: [achatId], references: [id], onDelete: Cascade)
+  article    Article @relation(fields: [articleId], references: [id])
+}
