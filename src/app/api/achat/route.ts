@@ -2,18 +2,41 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
+  let body: any;
   try {
-    // 🟢 Récupération des données envoyées par le client
-    const { nom, prenom, wilaya, ville, telephone, totalMontant, articles } = await req.json();
+    // On essaie de parser le corps de la requête
+    body = await req.json();
+  } catch (err) {
+    // Si le parsing échoue (corps vide ou JSON invalide), on renvoie une erreur 400
+    return NextResponse.json(
+      { error: "Le corps de la requête est vide ou invalide" },
+      { status: 400 }
+    );
+  }
+  
+  // Vérifier que le body est un objet non null
+  if (!body || typeof body !== "object") {
+    return NextResponse.json(
+      { error: "Le corps de la requête est vide" },
+      { status: 400 }
+    );
+  }
+  
+  // Destructuration du body
+  const { nom, prenom, wilaya, ville, telephone, totalMontant, articles } = body;
 
-    console.log("Données reçues :", { nom, prenom, wilaya, ville, telephone, totalMontant, articles });
+  console.log("Données reçues :", { nom, prenom, wilaya, ville, telephone, totalMontant, articles });
 
-    // 🛑 Vérification que les données ne sont pas nulles
-    if (!nom || !prenom || !wilaya || !ville || !telephone || !totalMontant || !articles || articles.length === 0) {
-      return NextResponse.json({ error: "Données invalides ou incomplètes" }, { status: 400 });
-    }
+  // Vérification que les données ne sont pas nulles ou incomplètes
+  if (!nom || !prenom || !wilaya || !ville || !telephone || !totalMontant || !articles || articles.length === 0) {
+    return NextResponse.json(
+      { error: "Données invalides ou incomplètes" },
+      { status: 400 }
+    );
+  }
 
-    // 🔹 Vérification des stocks avant de créer l'achat
+  try {
+    // Vérification des stocks avant de créer l'achat
     for (const article of articles) {
       const stock = await prisma.article.findUnique({
         where: { id: article.id },
@@ -22,13 +45,15 @@ export async function POST(req: Request) {
     
       if (!stock || stock.quantité < article.quantité) {
         return NextResponse.json(
-          { error: `Stock insuffisant pour l'article "${stock?.titre || 'Inconnu'}" RESSAYEZ PLUS TARD ! ` },
+          {
+            error: `Stock insuffisant pour l'article "${stock?.titre || 'Inconnu'}" - RESSAYEZ PLUS TARD !`
+          },
           { status: 400 }
         );
       }
     }
 
-    // 🔥 Création de l'achat
+    // Création de l'achat
     const achat = await prisma.achat.create({
       data: {
         nom,
@@ -36,13 +61,13 @@ export async function POST(req: Request) {
         wilaya,
         ville,
         telephone,
-        totalMontant: parseFloat(totalMontant), // 🛠 Convertir en nombre pour éviter les erreurs
+        totalMontant: parseFloat(totalMontant), // Convertir en nombre
       },
     });
 
     console.log("✅ Achat créé avec succès :", achat);
 
-    // 🔹 Ajout des articles dans `ArticleAchat` et mise à jour des stocks
+    // Ajout des articles dans `ArticleAchat` et mise à jour des stocks
     for (const article of articles) {
       await prisma.articleAchat.create({
         data: {
@@ -55,7 +80,7 @@ export async function POST(req: Request) {
 
       console.log(`✅ Article ajouté (ID: ${article.id}, Quantité: ${article.quantité})`);
 
-      // 🔥 Mise à jour du stock de l'article
+      // Mise à jour du stock de l'article
       await prisma.article.update({
         where: { id: article.id },
         data: { quantité: { decrement: article.quantité } },
@@ -64,13 +89,19 @@ export async function POST(req: Request) {
       console.log(`✅ Stock mis à jour pour l'article ID: ${article.id}`);
     }
 
-    // 🔹 Réponse avec l'achat et les articles associés
-    return NextResponse.json({ message: "Achat enregistré avec succès", achat }, { status: 201 });
-
-  } catch (error) {
-    console.error("❌ Erreur lors de la création de l'achat :", error);
     return NextResponse.json(
-      { error: "Erreur lors de la création de l'achat", details: (error as Error).message },
+      { message: "Achat enregistré avec succès", id: achat.id },
+      { status: 201 }
+    );
+    
+  } catch (error) {
+    console.error("❌ Erreur lors de la création de l'achat :", error ?? "Erreur inconnue");
+    const errorMessage =
+      error && typeof error === "object" && "message" in error && error.message
+        ? error.message
+        : "Erreur inconnue";
+    return NextResponse.json(
+      { error: "Erreur lors de la création de l'achat", details: errorMessage },
       { status: 500 }
     );
   }
@@ -189,6 +220,8 @@ export async function PUT(req: Request) {
           },
         });
       }
+
+      await prisma.achat.delete({ where: { id: achatId } });
 
       return NextResponse.json({ message: "Achat refusé et stock mis à jour" }, { status: 200 });
     }

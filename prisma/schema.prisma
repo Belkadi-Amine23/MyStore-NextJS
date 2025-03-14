@@ -44,7 +44,7 @@ model Achat {
   prenom      String         @db.Text
   wilaya      String         @db.Text
   ville       String         @db.Text
-  telephone   String         @unique
+  telephone   String         @db.Text
   totalMontant Float
   validé      Boolean        @default(false) // Confirmé par l'admin
   createdAt   DateTime       @default(now())

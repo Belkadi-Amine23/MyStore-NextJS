@@ -27,13 +27,13 @@ export async function POST(req: Request) {
     const accessToken = jwt.sign(
       { userId: user.id, role: user.role },
       SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "1m" }
     );
 
     const refreshToken = jwt.sign(
       { userId: user.id },
       SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "5m" }
     );
 
     // Stocker les tokens dans des cookies sécurisés
