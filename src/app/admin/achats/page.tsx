@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FaArrowLeft } from "react-icons/fa";
 
 interface Article {
   id: number;
@@ -20,6 +22,7 @@ interface Achat {
 
 export default function AchatsAdmin() {
   const [achats, setAchats] = useState<Achat[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/achat")
@@ -51,6 +54,17 @@ export default function AchatsAdmin() {
 
   return (
     <div className="min-h-screen p-6">
+      {/* Bouton de retour en haut de page */}
+      <div className="absolute top-6 right-6">
+        <button
+          onClick={() => router.push("/admin")}
+          className="flex items-center bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded shadow transition-colors"
+        >
+          <FaArrowLeft className="mr-2" />
+          Retour
+        </button>
+      </div>
+      
       <h1 className="text-2xl font-bold mb-4">Achats en attente</h1>
       <div className="grid grid-cols-1 gap-6">
         {achats.map((achat) => (
@@ -69,13 +83,13 @@ export default function AchatsAdmin() {
             <div className="mt-4 flex space-x-2">
               <button
                 onClick={() => handleAchatAction(achat.id, "valider")}
-                className="bg-green-500 text-white px-3 py-1 rounded"
+                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
               >
                 Valider
               </button>
               <button
                 onClick={() => handleAchatAction(achat.id, "refuser")}
-                className="bg-red-500 text-white px-3 py-1 rounded"
+                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
               >
                 Refuser
               </button>

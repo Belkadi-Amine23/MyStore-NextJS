@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FaUpload, FaCheckCircle } from "react-icons/fa";
+import Link from "next/link";
+import { FaUpload, FaCheckCircle, FaArrowLeft } from "react-icons/fa";
 
 const CreateArticle = () => {
   const [title, setTitle] = useState("");
@@ -71,7 +72,16 @@ const CreateArticle = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6 relative">
+      {/* Bouton de retour vers /admin en haut à droite */}
+      <Link
+        href="/admin"
+        className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-full shadow-md hover:shadow-xl transition-all"
+      >
+        <FaArrowLeft />
+        <span>Retour</span>
+      </Link>
+
       <div className="bg-white p-8 rounded-2xl shadow-lg max-w-lg w-full">
         <h2 className="text-2xl font-semibold text-gray-800 text-center mb-6">Créer un Article</h2>
 
@@ -88,11 +98,39 @@ const CreateArticle = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200" />
-          <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200" />
-          <input type="number" placeholder="Prix" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200" />
-          <input type="number" placeholder="Quantité" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200" />
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200">
+          <input
+            type="text"
+            placeholder="Titre"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+          />
+          {/* Champ de description agrandi */}
+          <textarea
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200 h-40" // Hauteur augmentée
+          />
+          <input
+            type="number"
+            placeholder="Prix"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+          />
+          <input
+            type="number"
+            placeholder="Quantité"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+          />
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+          >
             <option value="">Sélectionner une famille</option>
             <option value="Electronique">Électronique</option>
             <option value="Vêtements">Vêtements</option>
@@ -104,7 +142,9 @@ const CreateArticle = () => {
             <span className="text-gray-600">Uploader une image</span>
           </label>
           {preview && <img src={preview} alt="Aperçu" className="w-full h-auto rounded-lg border mt-2" />}
-          <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-all">Créer l'article</button>
+          <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-all">
+            Créer l'article
+          </button>
         </form>
       </div>
     </div>

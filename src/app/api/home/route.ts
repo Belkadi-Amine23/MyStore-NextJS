@@ -10,6 +10,8 @@ export async function GET(request: Request) {
         description: true,
         prix: true,
         remise: true,
+        imageUrl: true,
+        quantité: true, // Ajout de la quantité
       },
     });
 

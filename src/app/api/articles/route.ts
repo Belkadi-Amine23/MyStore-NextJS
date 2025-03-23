@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
         prix: price,
         remise: 0,
         imageUrl,
-        userId,
       },
     });
 
