@@ -94,7 +94,6 @@ export default function AdvancedStatisticsPage() {
   const [clientSortColumn, setClientSortColumn] = useState<"nom" | "date">("nom");
   const [clientSortOrder, setClientSortOrder] = useState<"asc" | "desc">("asc");
 
-  // Réinitialiser la page de la modal à chaque changement de modal
   useEffect(() => {
     setModalPage(1);
   }, [detailModal]);
@@ -114,15 +113,15 @@ export default function AdvancedStatisticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-100 to-purple-100">
-        <div className="text-6xl animate-spin text-blue-600">⏳</div>
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-200 to-purple-300">
+        <div className="text-6xl animate-spin text-white">⏳</div>
       </div>
     );
   }
   if (!stats) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-100 to-purple-100">
-        <p className="text-xl text-gray-700">Aucune donnée disponible</p>
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-200 to-purple-300">
+        <p className="text-xl text-white">Aucune donnée disponible</p>
       </div>
     );
   }
@@ -205,7 +204,7 @@ export default function AdvancedStatisticsPage() {
     ],
   };
 
-  // Fonction pour ouvrir et fermer les modales de détails
+  // Fonctions pour ouvrir et fermer les modales de détails
   const openModal = (title: string, content: JSX.Element) => {
     setDetailModal({ title, content });
   };
@@ -216,350 +215,42 @@ export default function AdvancedStatisticsPage() {
     return data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
   };
 
-  // Filtrer et trier les achats clients
-  const filterAndSortPurchases = () => {
-    let filtered = stats.validatedPurchases.filter((purchase) =>
-      purchase.nom.toLowerCase().includes(clientSearch.toLowerCase()) ||
-      purchase.prenom.toLowerCase().includes(clientSearch.toLowerCase()) ||
-      purchase.telephone.includes(clientSearch)
+  // Modal pour la liste des familles avec pagination
+  const renderFamiliesModalContent = () => {
+    const pageSize = 5;
+    const totalPages = Math.ceil(stats.familyList.length / pageSize);
+    const paginatedFamilies = paginate(stats.familyList, pageSize, modalPage);
+    return (
+      <>
+        <ul className="list-disc ml-4 text-gray-800">
+          {paginatedFamilies.map((fam, i) => (
+            <li key={i}>{fam.famille}</li>
+          ))}
+        </ul>
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-between">
+            <button
+              disabled={modalPage === 1}
+              onClick={() => setModalPage(modalPage - 1)}
+              className="px-4 py-2 bg-gray-300 text-gray-800 rounded disabled:opacity-50"
+            >
+              Précédent
+            </button>
+            <span className="text-gray-600">
+              Page {modalPage} sur {totalPages}
+            </span>
+            <button
+              disabled={modalPage === totalPages}
+              onClick={() => setModalPage(modalPage + 1)}
+              className="px-4 py-2 bg-gray-300 text-gray-800 rounded disabled:opacity-50"
+            >
+              Suivant
+            </button>
+          </div>
+        )}
+      </>
     );
-    if (clientSortColumn === "nom") {
-      filtered = filtered.sort((a, b) => {
-        const nameA = a.nom.toLowerCase();
-        const nameB = b.nom.toLowerCase();
-        if (nameA < nameB) return clientSortOrder === "asc" ? -1 : 1;
-        if (nameA > nameB) return clientSortOrder === "asc" ? 1 : -1;
-        return 0;
-      });
-    } else if (clientSortColumn === "date") {
-      filtered = filtered.sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return clientSortOrder === "asc" ? dateA - dateB : dateB - dateA;
-      });
-    }
-    return filtered;
   };
-
-
-  // Vue d'ensemble : 9 rubriques interactives
-  const renderOverview = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* 1. Total des Ventes */}
-      <div
-        onClick={() =>
-          openModal("Détails des Achats Validés", (
-            <div>
-              <p className="mb-2">
-                Total des ventes : <span className="font-bold">{stats.totalSales}€</span>
-              </p>
-              <p className="mb-2">
-                Nombre d'achats validés : <span className="font-bold">{stats.totalAchats}</span>
-              </p>
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border p-2">Date</th>
-                    <th className="border p-2">Montant</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginate(stats.validatedPurchases, 5, 1).map((purchase, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{new Date(purchase.createdAt).toLocaleDateString()}</td>
-                      <td className="border p-2">{purchase.totalMontant}€</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Ventes Validées</h2>
-        <p className="text-4xl font-bold text-blue-600">{stats.totalSales}€</p>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* 2. Articles en Stock */}
-      <div
-        onClick={() =>
-          openModal("Détails Articles en Stock", (
-            <div>
-              <p className="mb-2">
-                Total articles en stock : <span className="font-bold">{stats.totalArticles}</span>
-              </p>
-              <div className="mb-2">
-                <h3 className="font-semibold">Faible Stock :</h3>
-                <ul className="list-disc ml-4">
-                  {stats.lowStockArticles.map((art, i) => (
-                    <li key={i}>{art.titre} - {art.quantité}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold">Stock Suffisant :</h3>
-                <ul className="list-disc ml-4">
-                  {stats.sufficientStockArticles.map((art, i) => (
-                    <li key={i}>{art.titre} - {art.quantité}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Articles en Stock</h2>
-        <p className="text-4xl font-bold text-green-600">{stats.totalArticles}</p>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* 3. Nombre de Familles */}
-      <div
-        onClick={() =>
-          openModal("Liste des Familles", (
-            <div>
-              <p className="mb-2">
-                Nombre total de familles : <span className="font-bold">{stats.totalFamilies}</span>
-              </p>
-              {renderClientsModalContent()}
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Familles de Produits</h2>
-        <p className="text-4xl font-bold text-indigo-600">{stats.totalFamilies}</p>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir toutes</p>
-      </div>
-      {/* 4. Total des Utilisateurs */}
-      <div
-        onClick={() =>
-          openModal("Détails Utilisateurs", (
-            <div>
-              <p className="mb-2">
-                Nombre total d'utilisateurs : <span className="font-bold">{stats.totalUsers}</span>
-              </p>
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border p-2">Nom</th>
-                    <th className="border p-2">Rôle</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.usersDetails.map((user, i) => (
-                    <tr key={i}>
-                      <td className="border p-2">{user.name}</td>
-                      <td className="border p-2">{user.role}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Utilisateurs</h2>
-        <p className="text-4xl font-bold text-yellow-600">{stats.totalUsers}</p>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* 5. Moyenne des Ventes Quotidiennes */}
-      <div
-        onClick={() =>
-          openModal("Détails Ventes Quotidiennes", (
-            <div>
-              <p className="mb-2">
-                Moyenne quotidienne : <span className="font-bold">{stats.averageDailySales.toFixed(2)}€</span>
-              </p>
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border p-2">Date</th>
-                    <th className="border p-2">Ventes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginate(stats.dailySales, 5, 1).map((sale, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{sale.date}</td>
-                      <td className="border p-2">{sale.sales}€</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Ventes Quotidiennes Moy.</h2>
-        <p className="text-4xl font-bold text-red-600">{stats.averageDailySales.toFixed(2)}€</p>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* 6. Total Achats Réalisés */}
-      <div
-        onClick={() =>
-          openModal("Détails Achats Réalisés", (
-            <div>
-              <p className="mb-2">
-                Nombre d'achats validés : <span className="font-bold">{stats.totalAchats}</span>
-              </p>
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border p-2">Date</th>
-                    <th className="border p-2">Montant</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginate(stats.validatedPurchases, 5, 1).map((purchase, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{new Date(purchase.createdAt).toLocaleDateString()}</td>
-                      <td className="border p-2">{purchase.totalMontant}€</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Achats Validés</h2>
-        <p className="text-4xl font-bold text-purple-600">{stats.totalAchats}</p>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* 7. Ventes par Famille (camembert) */}
-      <div
-        onClick={() =>
-          openModal("Détails Ventes par Famille", (
-            <div>
-              <p className="mb-2">
-                Total ventes par famille : <span className="font-bold">{totalSalesByFamily}€</span>
-              </p>
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border p-2">Famille</th>
-                    <th className="border p-2">Ventes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(stats.salesByFamily).slice(0, 5).map(([fam, ventes], idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{fam}</td>
-                      <td className="border p-2">{ventes}€</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Ventes par Famille</h2>
-        <div className="h-40 relative">
-          <Pie data={pieData} options={pieOptions} />
-        </div>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* 8. Ventes Temporelles (Filtrable) */}
-      <div
-        onClick={() =>
-          openModal("Détails Ventes Temporelles", (
-            <div>
-              <p className="mb-2">Détails des ventes selon différents intervalles.</p>
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border p-2">Intervalle</th>
-                    <th className="border p-2">Ventes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginate(stats.monthlySales, 5, 1).map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{item.month}</td>
-                      <td className="border p-2">{item.sales}€</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Ventes Temporelles</h2>
-        <div className="h-40">
-          <Bar
-            data={timeBarData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: "top" } },
-            }}
-          />
-        </div>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* 9. Top Articles */}
-      <div
-        onClick={() =>
-          openModal("Détails Top Articles", (
-            <div>
-              <p className="mb-2">Top articles vendus :</p>
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border p-2">Article</th>
-                    <th className="border p-2">Quantité</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.topSellingArticles.map((art, i) => (
-                    <tr key={i}>
-                      <td className="border p-2">{art.titre}</td>
-                      <td className="border p-2">{art.quantity}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Top Articles Vendus</h2>
-        <div className="h-40">
-          <Line
-            data={lineData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: "top" } },
-              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-            }}
-          />
-        </div>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
-      </div>
-      {/* Nouvelle rubrique "Clients" */}
-      <div
-        onClick={() =>
-          openModal("Détails Clients", renderClientsModalContent())
-        }
-        className="cursor-pointer bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1 hover:shadow-2xl"
-      >
-        <h2 className="text-xl font-semibold text-gray-700">Clients</h2>
-        <p className="text-4xl font-bold text-pink-600">{stats.clients.length}</p>
-        <p className="text-sm text-gray-500 mt-2 underline">Voir détails</p>
-      </div>
-    </div>
-  );
 
   // Modal pour la rubrique Clients (tableau avec filtrage, tri, pagination et un camembert)
   const renderClientsModalContent = () => {
@@ -569,13 +260,12 @@ export default function AdvancedStatisticsPage() {
       purchase.prenom.toLowerCase().includes(clientSearch.toLowerCase()) ||
       purchase.telephone.includes(clientSearch)
     );
-    // Tri basique selon la colonne sélectionnée
     const sorted = [...filtered].sort((a, b) => {
       if (clientSortColumn === "nom") {
-        const nameA = a.nom.toLowerCase();
-        const nameB = b.nom.toLowerCase();
-        return clientSortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
-      } else { // tri par date
+        return clientSortOrder === "asc"
+          ? a.nom.localeCompare(b.nom)
+          : b.nom.localeCompare(a.nom);
+      } else {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
         return clientSortOrder === "asc" ? dateA - dateB : dateB - dateA;
@@ -584,7 +274,6 @@ export default function AdvancedStatisticsPage() {
     const totalPages = Math.ceil(sorted.length / pageSize);
     const paginated = paginate(sorted, pageSize, modalPage);
 
-    // Préparer des données pour le camembert des clients (nombre d'achats par client)
     const clientCounts: { [key: string]: number } = {};
     sorted.forEach((p) => {
       const key = `${p.prenom} ${p.nom}`;
@@ -640,7 +329,7 @@ export default function AdvancedStatisticsPage() {
             </button>
           </div>
         </div>
-        <table className="min-w-full border-collapse">
+        <table className="min-w-full border-collapse text-gray-800">
           <thead>
             <tr>
               <th className="border p-2">Nom</th>
@@ -693,15 +382,207 @@ export default function AdvancedStatisticsPage() {
     );
   };
 
-  // Détails Articles enrichis (peut être adapté)
+  // Vue d'ensemble (6 rubriques : exclusions faites)
+  const renderOverview = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* 1. Total des Ventes */}
+      <div
+        onClick={() =>
+          openModal("Détails des Achats Validés", (
+            <div>
+              <p className="mb-2">
+                Total des ventes : <span className="font-bold">{stats.totalSales}€</span>
+              </p>
+              <p className="mb-2">
+                Nombre d'achats validés : <span className="font-bold">{stats.totalAchats}</span>
+              </p>
+              <table className="min-w-full border-collapse text-gray-800">
+                <thead>
+                  <tr>
+                    <th className="border p-2">Date</th>
+                    <th className="border p-2">Montant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginate(stats.validatedPurchases, 5, 1).map((purchase, idx) => (
+                    <tr key={idx}>
+                      <td className="border p-2">{new Date(purchase.createdAt).toLocaleDateString()}</td>
+                      <td className="border p-2">{purchase.totalMontant}€</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        }
+        className="cursor-pointer bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1 hover:shadow-2xl"
+      >
+        <h2 className="text-xl font-semibold text-gray-800">Ventes Validées</h2>
+        <p className="text-4xl font-bold text-blue-500">{stats.totalSales}€</p>
+        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
+      </div>
+      {/* 2. Articles en Stock */}
+      <div
+        onClick={() =>
+          openModal("Détails Articles en Stock", (
+            <div>
+              <p className="mb-2">
+                Total articles en stock : <span className="font-bold">{stats.totalArticles}</span>
+              </p>
+              <div className="mb-2">
+                <h3 className="font-semibold">Faible Stock :</h3>
+                <ul className="list-disc ml-4 text-gray-800">
+                  {stats.lowStockArticles.map((art, i) => (
+                    <li key={i}>{art.titre} - {art.quantité}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold">Stock Suffisant :</h3>
+                <ul className="list-disc ml-4 text-gray-800">
+                  {stats.sufficientStockArticles.map((art, i) => (
+                    <li key={i}>{art.titre} - {art.quantité}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))
+        }
+        className="cursor-pointer bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1 hover:shadow-2xl"
+      >
+        <h2 className="text-xl font-semibold text-green-600">Articles en Stock</h2>
+        <p className="text-4xl font-bold">{stats.totalArticles}</p>
+        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
+      </div>
+      {/* 3. Nombre de Familles */}
+      <div
+        onClick={() =>
+          openModal("Liste des Familles", (
+            <div>
+              <p className="mb-2">
+                Nombre total de familles : <span className="font-bold">{stats.totalFamilies}</span>
+              </p>
+              {renderFamiliesModalContent()}
+            </div>
+          ))
+        }
+        className="cursor-pointer bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1 hover:shadow-2xl"
+      >
+        <h2 className="text-xl font-semibold text-indigo-600">Familles de Produits</h2>
+        <p className="text-4xl font-bold">{stats.totalFamilies}</p>
+        <p className="text-sm text-gray-500 mt-2 underline">Voir toutes</p>
+      </div>
+      {/* 4. Total des Utilisateurs */}
+      <div
+        onClick={() =>
+          openModal("Détails Utilisateurs", (
+            <div>
+              <p className="mb-2">
+                Nombre total d'utilisateurs : <span className="font-bold">{stats.totalUsers}</span>
+              </p>
+              <table className="min-w-full border-collapse text-gray-800">
+                <thead>
+                  <tr>
+                    <th className="border p-2">Nom</th>
+                    <th className="border p-2">Rôle</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.usersDetails.map((user, i) => (
+                    <tr key={i}>
+                      <td className="border p-2">{user.name}</td>
+                      <td className="border p-2">{user.role}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        }
+        className="cursor-pointer bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1 hover:shadow-2xl"
+      >
+        <h2 className="text-xl font-semibold text-yellow-600">Utilisateurs</h2>
+        <p className="text-4xl font-bold">{stats.totalUsers}</p>
+        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
+      </div>
+      {/* 5. Moyenne des Ventes Quotidiennes */}
+      <div
+        onClick={() =>
+          openModal("Détails Ventes Quotidiennes", (
+            <div>
+              <p className="mb-2">
+                Moyenne quotidienne : <span className="font-bold">{stats.averageDailySales.toFixed(2)}€</span>
+              </p>
+              <table className="min-w-full border-collapse text-gray-800">
+                <thead>
+                  <tr>
+                    <th className="border p-2">Date</th>
+                    <th className="border p-2">Ventes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginate(stats.dailySales, 5, 1).map((sale, idx) => (
+                    <tr key={idx}>
+                      <td className="border p-2">{sale.date}</td>
+                      <td className="border p-2">{sale.sales}€</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        }
+        className="cursor-pointer bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1 hover:shadow-2xl"
+      >
+        <h2 className="text-xl font-semibold text-red-600">Ventes Quotidiennes Moy.</h2>
+        <p className="text-4xl font-bold">{stats.averageDailySales.toFixed(2)}€</p>
+        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
+      </div>
+      {/* 6. Total Achats Réalisés */}
+      <div
+        onClick={() =>
+          openModal("Détails Achats Réalisés", (
+            <div>
+              <p className="mb-2">
+                Nombre d'achats validés : <span className="font-bold">{stats.totalAchats}</span>
+              </p>
+              <table className="min-w-full border-collapse text-gray-800">
+                <thead>
+                  <tr>
+                    <th className="border p-2">Date</th>
+                    <th className="border p-2">Montant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginate(stats.validatedPurchases, 5, 1).map((purchase, idx) => (
+                    <tr key={idx}>
+                      <td className="border p-2">{new Date(purchase.createdAt).toLocaleDateString()}</td>
+                      <td className="border p-2">{purchase.totalMontant}€</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        }
+        className="cursor-pointer bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1 hover:shadow-2xl"
+      >
+        <h2 className="text-xl font-semibold text-purple-600">Achats Validés</h2>
+        <p className="text-4xl font-bold">{stats.totalAchats}</p>
+        <p className="text-sm text-gray-500 mt-2 underline">Voir plus</p>
+      </div>
+    </div>
+  );
+
+  // Détails Articles enrichis
   const renderArticlesDetails = () => (
     <div className="space-y-6">
       {renderOverview()}
-      <div className="bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1">
+      <div className="bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1">
         <h2 className="text-xl font-semibold mb-4">Détails Articles</h2>
         <p className="mb-2 font-semibold">Faible Stock :</p>
         {stats.lowStockArticles.length > 0 ? (
-          <ul className="list-disc ml-4">
+          <ul className="list-disc ml-4 text-gray-800">
             {stats.lowStockArticles.map((art, i) => (
               <li key={i}>{art.titre} - {art.quantité}</li>
             ))}
@@ -711,7 +592,7 @@ export default function AdvancedStatisticsPage() {
         )}
         <p className="mt-4 mb-2 font-semibold">Articles en Remise :</p>
         {stats.discountedArticles.length > 0 ? (
-          <ul className="list-disc ml-4">
+          <ul className="list-disc ml-4 text-gray-800">
             {stats.discountedArticles.map((art, i) => (
               <li key={i}>{art.titre} - {art.quantité}</li>
             ))}
@@ -721,7 +602,7 @@ export default function AdvancedStatisticsPage() {
         )}
         <p className="mt-4 mb-2 font-semibold">Articles les Moins Vendus :</p>
         {stats.leastSellingArticles.length > 0 ? (
-          <ul className="list-disc ml-4">
+          <ul className="list-disc ml-4 text-gray-800">
             {stats.leastSellingArticles.map((art, i) => (
               <li key={i}>{art.titre} - {art.quantity}</li>
             ))}
@@ -742,7 +623,7 @@ export default function AdvancedStatisticsPage() {
         return renderArticlesDetails();
       case "salesByFamily":
         return (
-          <div className="bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1" style={{ height: "300px" }}>
+          <div className="bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1" style={{ height: "300px" }}>
             <h2 className="text-xl font-semibold mb-4">Ventes par Famille</h2>
             <div className="relative h-full">
               <Pie data={pieData} options={pieOptions} />
@@ -751,7 +632,7 @@ export default function AdvancedStatisticsPage() {
         );
       case "timeSales":
         return (
-          <div className="bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1">
+          <div className="bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1">
             <h2 className="text-xl font-semibold mb-4">
               Ventes {timeFilter === "yearly" ? "Annuelles" : timeFilter === "monthly" ? "Mensuelles" : timeFilter === "weekly" ? "Hebdomadaires" : "Quotidiennes"}
             </h2>
@@ -782,7 +663,7 @@ export default function AdvancedStatisticsPage() {
         );
       case "topArticles":
         return (
-          <div className="bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1">
+          <div className="bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1">
             <h2 className="text-xl font-semibold mb-4">Top Articles Vendus</h2>
             <div className="h-64">
               <Line
@@ -799,7 +680,7 @@ export default function AdvancedStatisticsPage() {
         );
       case "clients":
         return (
-          <div className="bg-white p-6 rounded-lg shadow-xl transition transform hover:-translate-y-1">
+          <div className="bg-white p-6 rounded-xl shadow-lg transition transform hover:-translate-y-1">
             <h2 className="text-xl font-semibold mb-4">Statistiques Clients</h2>
             {renderClientsModalContent()}
           </div>
@@ -810,13 +691,13 @@ export default function AdvancedStatisticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-50 p-6">
       {/* En-tête */}
       <header className="mb-8 flex justify-between items-center">
         <h1 className="text-4xl font-extrabold text-gray-800">Statistiques du Magasin</h1>
         <Link
           href="/admin"
-          className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full transition-shadow shadow-2xl"
+          className="flex items-center bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-full transition-shadow shadow-xl"
         >
           <FaArrowLeft className="mr-2 text-2xl" /> Retour
         </Link>
@@ -824,14 +705,14 @@ export default function AdvancedStatisticsPage() {
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Menu latéral */}
-        <aside className="md:w-1/4 bg-white p-6 rounded-xl shadow-2xl transition transform hover:-translate-y-1">
+        <aside className="md:w-1/4 bg-white p-6 rounded-xl shadow-xl transition transform hover:-translate-y-1">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Menu</h2>
           <ul className="space-y-4">
             <li>
               <button
                 onClick={() => setSelectedTab("overview")}
                 className={`w-full text-left px-4 py-3 rounded-lg transition duration-300 ${
-                  selectedTab === "overview" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800 hover:bg-blue-100"
+                  selectedTab === "overview" ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-800 hover:bg-blue-300"
                 }`}
               >
                 <FaHome className="inline-block mr-2 text-xl" /> Vue d'ensemble
@@ -841,7 +722,7 @@ export default function AdvancedStatisticsPage() {
               <button
                 onClick={() => setSelectedTab("articlesDetails")}
                 className={`w-full text-left px-4 py-3 rounded-lg transition duration-300 ${
-                  selectedTab === "articlesDetails" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800 hover:bg-blue-100"
+                  selectedTab === "articlesDetails" ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-800 hover:bg-blue-300"
                 }`}
               >
                 <FaClipboardList className="inline-block mr-2 text-xl" /> Détails Articles
@@ -851,7 +732,7 @@ export default function AdvancedStatisticsPage() {
               <button
                 onClick={() => setSelectedTab("salesByFamily")}
                 className={`w-full text-left px-4 py-3 rounded-lg transition duration-300 ${
-                  selectedTab === "salesByFamily" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800 hover:bg-blue-100"
+                  selectedTab === "salesByFamily" ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-800 hover:bg-blue-300"
                 }`}
               >
                 <FaChartPie className="inline-block mr-2 text-xl" /> Ventes par Famille
@@ -861,7 +742,7 @@ export default function AdvancedStatisticsPage() {
               <button
                 onClick={() => setSelectedTab("timeSales")}
                 className={`w-full text-left px-4 py-3 rounded-lg transition duration-300 ${
-                  selectedTab === "timeSales" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800 hover:bg-blue-100"
+                  selectedTab === "timeSales" ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-800 hover:bg-blue-300"
                 }`}
               >
                 <FaCalendarAlt className="inline-block mr-2 text-xl" /> Ventes Temporelles
@@ -871,7 +752,7 @@ export default function AdvancedStatisticsPage() {
               <button
                 onClick={() => setSelectedTab("topArticles")}
                 className={`w-full text-left px-4 py-3 rounded-lg transition duration-300 ${
-                  selectedTab === "topArticles" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800 hover:bg-blue-100"
+                  selectedTab === "topArticles" ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-800 hover:bg-blue-300"
                 }`}
               >
                 <FaListOl className="inline-block mr-2 text-xl" /> Top Articles
@@ -881,7 +762,7 @@ export default function AdvancedStatisticsPage() {
               <button
                 onClick={() => setSelectedTab("clients")}
                 className={`w-full text-left px-4 py-3 rounded-lg transition duration-300 ${
-                  selectedTab === "clients" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800 hover:bg-blue-100"
+                  selectedTab === "clients" ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-800 hover:bg-blue-300"
                 }`}
               >
                 <FaUserAlt className="inline-block mr-2 text-xl" /> Clients
@@ -896,7 +777,7 @@ export default function AdvancedStatisticsPage() {
 
       {/* Fenêtre Modale de Détails */}
       {detailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
           <div className="bg-white rounded-2xl p-8 max-w-3xl w-full shadow-2xl transform transition-all">
             <div className="flex justify-between items-center border-b pb-4">
               <h2 className="text-2xl font-bold text-gray-800">{detailModal.title}</h2>
@@ -904,7 +785,7 @@ export default function AdvancedStatisticsPage() {
             </div>
             <div className="mt-4 max-h-96 overflow-y-auto">{detailModal.content}</div>
             <div className="mt-6 text-right">
-              <button onClick={closeModal} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full transition-shadow shadow-lg">
+              <button onClick={closeModal} className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-full transition-shadow shadow-xl">
                 Fermer
               </button>
             </div>

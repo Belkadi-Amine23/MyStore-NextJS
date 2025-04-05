@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     );
 
     const refreshToken = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, role: user.role},
       SECRET,
       { expiresIn: "5m" }
     );

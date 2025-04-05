@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     });
 
     const jsonResponse = { articles, pendingCount: pendingAchats.length };
-    console.log("Réponse API :", jsonResponse);
+   // console.log("Réponse API :", jsonResponse);
     return NextResponse.json(jsonResponse, { status: 200 });
   } catch (error) {
     console.error("Erreur lors de la récupération des données :", error);

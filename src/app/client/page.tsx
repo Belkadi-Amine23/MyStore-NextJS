@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaShoppingCart, FaSignOutAlt, FaPercentage, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import Link from "next/link";
-
 interface Article {
   id: number;
   titre: string;
@@ -72,10 +71,27 @@ export default function ClientPage() {
   };
 
   // ✅ Vider le panier lors de la déconnexion
-  const handleLogout = () => {
+  // ✅ Vider le panier lors de la déconnexion et supprimer les tokens
+  const handleLogout = async () => {
     if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-      localStorage.removeItem("panier"); // Supprime le panier
-      router.push("/login");
+      try {
+        const response = await fetch("/api/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          localStorage.removeItem("panier");
+          router.push("/login");
+        } else {
+          console.error("Erreur lors de la déconnexion côté serveur");
+          // Gérer l'erreur ici si nécessaire (afficher un message à l'utilisateur)
+        }
+      } catch (error) {
+        console.error("Erreur lors de la requête de déconnexion:", error);
+      }
     }
   };
 

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = "mon_secret_jwt"; // À mettre dans .env
+const SECRET = process.env.JWT_SECRET || "mon_secret_jwt";
 
 export function verifyToken(token: string) {
   try {
@@ -9,3 +9,5 @@ export function verifyToken(token: string) {
     return null;
   }
 }
+
+
